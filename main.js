@@ -472,6 +472,18 @@ async function getGameContext() {
   return { profile, game: latestMatchContext || game };
 }
 
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
 app.whenReady().then(() => {
   const updatesConfigured = setupAutoUpdater();
   ipcMain.handle("league:get-profile", getLeagueProfile);

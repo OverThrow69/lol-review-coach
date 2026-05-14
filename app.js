@@ -348,8 +348,9 @@ function gradeFromScore(score) {
 }
 
 function analyse(data) {
+  const en = currentLang === "en";
   const target = roleTargets[data.role] || roleTargets.unknown;
-  const roleName = data.role === "unknown" ? "jou role" : data.role;
+  const roleName = data.role === "unknown" ? (en ? "your role" : "jou role") : data.role;
   const kda = (data.kills + data.assists) / Math.max(1, data.deaths);
   const csPerMin = data.cs / data.minutes;
   const visionPerMin = data.vision / data.minutes;
@@ -369,137 +370,261 @@ function analyse(data) {
   score -= Math.max(0, deathsPerTen - 1.4) * 10;
 
   if (data.deaths >= 8 || deathsPerTen > 2.2) {
-    mistakes.push(["Te veel deaths", `Jy het ${data.deaths} keer gesterf. Dit steel tempo, farm en objective druk van jou span.`]);
-    improvements.push(["Death review", "Kyk elke death terug en merk: was dit vision, wave state, cooldowns, of greed? Los eers die grootste patroon op."]);
+    mistakes.push(en
+      ? ["Too many deaths", `You died ${data.deaths} times (${deathsPerTen.toFixed(1)}/10 min). Each death gives the enemy gold, tempo, and objective control.`]
+      : ["Te veel deaths", `Jy het ${data.deaths} keer gesterf. Dit steel tempo, farm en objective druk van jou span.`]);
+    improvements.push(en
+      ? ["Review your deaths", "Watch back each death and ask: was it bad vision, pushing a bad wave, overcommitting, or just greed? Fix the biggest pattern first."]
+      : ["Death review", "Kyk elke death terug en merk: was dit vision, wave state, cooldowns, of greed? Los eers die grootste patroon op."]);
   } else if (data.deaths <= 3) {
-    positives.push(["Goeie oorlewing", "Jy het min shutdowns weggegee en waarskynlik jou tempo stabiel gehou."]);
+    positives.push(en
+      ? ["Great survival", `Only ${data.deaths} death${data.deaths === 1 ? "" : "s"} — you kept your shutdown bounty low and maintained consistent tempo.`]
+      : ["Goeie oorlewing", "Jy het min shutdowns weggegee en waarskynlik jou tempo stabiel gehou."]);
   }
 
   if (csPerMin < target.cs * 0.78 && data.role !== "support") {
-    mistakes.push(["Farm het weggeval", `${csPerMin.toFixed(1)} CS/min is onder 'n sterk ${roleName}-teiken.`]);
-    improvements.push(["CS plan", "Vir die volgende game: tel jou CS op 10 minute, 15 minute en 20 minute. Mik eers vir konsekwentheid, nie perfeksie nie."]);
+    mistakes.push(en
+      ? ["CS falling off", `${csPerMin.toFixed(1)} CS/min is below a strong ${roleName} target (${target.cs.toFixed(1)}). That lost gold adds up fast.`]
+      : ["Farm het weggeval", `${csPerMin.toFixed(1)} CS/min is onder 'n sterk ${roleName}-teiken.`]);
+    improvements.push(en
+      ? ["CS checkpoints", "Next game: count your CS at 10, 15, and 20 minutes. Aim for consistency first, not perfection."]
+      : ["CS plan", "Vir die volgende game: tel jou CS op 10 minute, 15 minute en 20 minute. Mik eers vir konsekwentheid, nie perfeksie nie."]);
   } else if (csPerMin >= target.cs && data.role !== "support") {
-    positives.push(["Sterk farm", `${csPerMin.toFixed(1)} CS/min beteken jy het goud goed bly insamel.`]);
+    positives.push(en
+      ? ["Strong farming", `${csPerMin.toFixed(1)} CS/min — you kept your gold income high and consistent throughout the game.`]
+      : ["Sterk farm", `${csPerMin.toFixed(1)} CS/min beteken jy het goud goed bly insamel.`]);
   }
 
   if (visionPerMin < target.vision * 0.72) {
-    mistakes.push(["Lae vision", `Jou vision was ${visionPerMin.toFixed(1)} per minuut. Jy het moontlik fights geneem sonder genoeg inligting.`]);
-    improvements.push(["Vision roete", "Plaas wards op jou volgende objective-kant voordat jy push of rotate. Vision voor aksie, nie na paniek nie."]);
+    mistakes.push(en
+      ? ["Low vision", `${visionPerMin.toFixed(1)} vision/min is low for ${roleName}. You were probably making moves without knowing where the enemy was.`]
+      : ["Lae vision", `Jou vision was ${visionPerMin.toFixed(1)} per minuut. Jy het moontlik fights geneem sonder genoeg inligting.`]);
+    improvements.push(en
+      ? ["Ward before acting", "Place a ward on the objective side before you push or rotate. Vision before action, not after a scare."]
+      : ["Vision roete", "Plaas wards op jou volgende objective-kant voordat jy push of rotate. Vision voor aksie, nie na paniek nie."]);
   } else if (visionPerMin >= target.vision) {
-    positives.push(["Goeie map inligting", "Jou vision score pas goed by jou role en help jou span besluite neem."]);
+    positives.push(en
+      ? ["Good map control", `${visionPerMin.toFixed(1)} vision/min — your wards helped your team make informed decisions.`]
+      : ["Goeie map inligting", "Jou vision score pas goed by jou role en help jou span besluite neem."]);
   }
 
   if (data.kp < target.kp * 0.78) {
-    mistakes.push(["Lae kill deelname", `${data.kp}% KP wys jy was moontlik laat by fights of vas in side lane sonder payoff.`]);
-    improvements.push(["Tempo na skermutselings", "Na wave crash of camp clear, kyk dadelik of jy eerste kan beweeg na mid, river of objective."]);
+    mistakes.push(en
+      ? ["Low kill participation", `${data.kp}% KP — you were likely farming a side lane when your team was fighting, or rotating too late.`]
+      : ["Lae kill deelname", `${data.kp}% KP wys jy was moontlik laat by fights of vas in side lane sonder payoff.`]);
+    improvements.push(en
+      ? ["Move after clearing", "After crashing a wave or clearing a camp, immediately check if you can rotate to mid, river, or the next objective."]
+      : ["Tempo na skermutselings", "Na wave crash of camp clear, kyk dadelik of jy eerste kan beweeg na mid, river of objective."]);
   } else if (data.kp >= target.kp) {
-    positives.push(["Betrokke by fights", `${data.kp}% KP wys jy was deel van baie belangrike aksies.`]);
+    positives.push(en
+      ? ["High fight participation", `${data.kp}% KP — you were involved in the important fights and helped your team consistently.`]
+      : ["Betrokke by fights", `${data.kp}% KP wys jy was deel van baie belangrike aksies.`]);
   }
 
   if (data.objectives <= 1 && data.minutes >= 24) {
-    mistakes.push(["Min objective impak", "Jy was min betrokke by towers, dragons, grubs, herald of baron setup." ]);
-    improvements.push(["Objective timer", "Maak jou plan rondom die volgende spawn: push lane, reset, koop wards, beweeg eerste."]);
+    mistakes.push(en
+      ? ["Low objective impact", `Only ${data.objectives} objective${data.objectives === 1 ? "" : "s"} in ${data.minutes} minutes. Kills are only useful if they open a path to towers, dragons, or baron.`]
+      : ["Min objective impak", "Jy was min betrokke by towers, dragons, grubs, herald of baron setup."]);
+    improvements.push(en
+      ? ["Objective timer habit", "Build your plan around the next spawn: push your lane, reset, buy a ward, and arrive first."]
+      : ["Objective timer", "Maak jou plan rondom die volgende spawn: push lane, reset, koop wards, beweeg eerste."]);
   } else if (data.objectives >= 4) {
-    positives.push(["Sterk objective deelname", "Jy het jou voordeel in map progress omskep, nie net kills gejaag nie."]);
+    positives.push(en
+      ? ["Strong objective control", `${data.objectives} objectives — you turned your kills and advantages into real map progress instead of just chasing kills.`]
+      : ["Sterk objective deelname", "Jy het jou voordeel in map progress omskep, nie net kills gejaag nie."]);
   }
 
   if (data.goldState === "ahead") {
     if (data.leadUse === "converted" || data.objectives >= 4) {
-      positives.push(["Lead gebruik", "Jy het jou voordeel in towers, objectives of map control verander. Dis hoe jy games toemaak."]);
+      positives.push(en
+        ? ["Lead converted well", "You turned your advantage into towers, objectives, or map control — that is exactly how you close games out."]
+        : ["Lead gebruik", "Jy het jou voordeel in towers, objectives of map control verander. Dis hoe jy games toemaak."]);
     }
     if (data.leadUse === "threw" || data.deathPattern === "greed" || data.killQuality === "chased") {
-      mistakes.push(["Voor maar te riskant", "Toe jy voor was, het jy waarskynlik extra kills of waves gejaag in plaas van die game veilig toe te maak."]);
-      improvements.push(["Wanneer jy voor is", "Gebruik jou lead om vision diep te sit, waves te druk en objectives te force wanneer enemies moet antwoord. Moenie 50/50 fights vat nie."]);
+      mistakes.push(en
+        ? ["Ahead but too risky", "You were winning but kept chasing kills or greedy plays instead of safely closing the game out."]
+        : ["Voor maar te riskant", "Toe jy voor was, het jy waarskynlik extra kills of waves gejaag in plaas van die game veilig toe te maak."]);
+      improvements.push(en
+        ? ["Close it out", "When you are ahead: push waves, place deep vision, force objectives when enemies must respond. Avoid 50/50 fights you do not need."]
+        : ["Wanneer jy voor is", "Gebruik jou lead om vision diep te sit, waves te druk en objectives te force wanneer enemies moet antwoord. Moenie 50/50 fights vat nie."]);
       score -= 8;
     }
     if (data.leadUse === "passive") {
-      mistakes.push(["Voor maar te min druk", "Jy was voor, maar die map het waarskynlik nie genoeg verander nie. 'n Lead moet ruimte steel."]);
-      improvements.push(["Lead na druk", "Na elke kill of goeie trade: vra wat jy vat next - plate, tower, dragon, jungle camp, vision of roam."]);
+      mistakes.push(en
+        ? ["Ahead but not pressing", "You had the lead but the map did not change enough. A lead must be used to steal space — not just maintain CS."]
+        : ["Voor maar te min druk", "Jy was voor, maar die map het waarskynlik nie genoeg verander nie. 'n Lead moet ruimte steel."]);
+      improvements.push(en
+        ? ["Convert every lead", "After every kill or good trade, ask: what do I take next? Plate, tower, dragon, jungle camp, vision, or a roam?"]
+        : ["Lead na druk", "Na elke kill of goeie trade: vra wat jy vat next - plate, tower, dragon, jungle camp, vision of roam."]);
     }
   }
 
   if (data.goldState === "behind") {
     if (data.leadUse === "survivedBehind" || data.deaths <= 4) {
-      positives.push(["Goed gespeel van agter", "Jy het die game waarskynlik lank genoeg stabiel gehou om comeback kanse oop te hou."]);
+      positives.push(en
+        ? ["Played well from behind", "You kept the game stable long enough to give your team comeback opportunities — that takes discipline."]
+        : ["Goed gespeel van agter", "Jy het die game waarskynlik lank genoeg stabiel gehou om comeback kanse oop te hou."]);
     }
     if (data.leadUse === "forcedBehind" || data.killQuality === "chased") {
-      mistakes.push(["Agter maar steeds geforce", "Wanneer jy agter is, is random fights gewoonlik hoe die game vinnig wegbreek."]);
-      improvements.push(["Wanneer jy agter is", "Speel vir free farm, shutdown picks met numbers advantage, vision traps en waves onder tower. Vermy fair fights."]);
+      mistakes.push(en
+        ? ["Behind but forcing fights", "When you are losing, random 50/50 fights almost always make things worse, not better."]
+        : ["Agter maar steeds geforce", "Wanneer jy agter is, is random fights gewoonlik hoe die game vinnig wegbreek."]);
+      improvements.push(en
+        ? ["Play for free gold", "Farm safely, look for shutdown picks when you have numbers advantage, set vision traps, and avoid fair fights."]
+        : ["Wanneer jy agter is", "Speel vir free farm, shutdown picks met numbers advantage, vision traps en waves onder tower. Vermy fair fights."]);
       score -= 8;
     }
   }
 
   if (data.laneState === "lost") {
-    mistakes.push(["Lane verloor", "Die vroee game het jou tempo en farm waarskynlik seergemaak. Kyk spesifiek na level 1-6 trades en wave states."]);
-    improvements.push(["Lane recovery", "As jy lane verloor: freeze nader aan jou tower, vra vir cover op crash, en gee plate op as die alternatief 'n death is."]);
+    mistakes.push(en
+      ? ["Lost the lane", "The early game hurt your tempo and farm. Look specifically at your level 1–6 trades and wave positions."]
+      : ["Lane verloor", "Die vroee game het jou tempo en farm waarskynlik seergemaak. Kyk spesifiek na level 1-6 trades en wave states."]);
+    improvements.push(en
+      ? ["Lane recovery", "If you lose lane: freeze near your tower, ask for cover on wave crashes, and give up plates if the alternative is a death."]
+      : ["Lane recovery", "As jy lane verloor: freeze nader aan jou tower, vra vir cover op crash, en gee plate op as die alternatief 'n death is."]);
   } else if (data.laneState === "won") {
-    positives.push(["Lane pressure", "Jy het genoeg druk gebou om eerste te beweeg of die enemy onder tower te hou."]);
+    positives.push(en
+      ? ["Won the lane", "You built enough pressure to move first or keep the enemy under their tower — good early game control."]
+      : ["Lane pressure", "Jy het genoeg druk gebou om eerste te beweeg of die enemy onder tower te hou."]);
   } else if (data.laneState === "ignoredWave") {
-    mistakes.push(["Wave beheer verloor", "Roams, recalls of fights het waarskynlik gebeur sonder dat die wave eers reg was."]);
-    improvements.push(["Wave voor play", "Crash die wave voor roam/recall. As jy nie kan crash nie, ping dat jy nie eerste kan beweeg nie."]);
+    mistakes.push(en
+      ? ["Lost wave control", "You likely roamed, recalled, or fought without the wave being in a good position first."]
+      : ["Wave beheer verloor", "Roams, recalls of fights het waarskynlik gebeur sonder dat die wave eers reg was."]);
+    improvements.push(en
+      ? ["Wave before play", "Crash the wave before roaming or recalling. If you cannot crash it, ping that you cannot move first."]
+      : ["Wave voor play", "Crash die wave voor roam/recall. As jy nie kan crash nie, ping dat jy nie eerste kan beweeg nie."]);
   }
 
   if (data.killQuality === "chased") {
-    mistakes.push(["Kills gejaag", "Kills is net goed as dit lei na tempo, objectives, towers of shutdown gold. Chase kills maak dikwels waves sleg."]);
-    improvements.push(["Kill conversion", "Na 'n kill: stop vir 2 sekondes en kies die beste conversion - wave crash, plate, dragon, herald, baron, reset of invade."]);
+    mistakes.push(en
+      ? ["Chasing kills", `${data.kills} kills is great, but chasing instead of converting means you gave up towers, dragons, and tempo.`]
+      : ["Kills gejaag", "Kills is net goed as dit lei na tempo, objectives, towers of shutdown gold. Chase kills maak dikwels waves sleg."]);
+    improvements.push(en
+      ? ["2-second rule", "After every kill: stop for 2 seconds and choose the best conversion — wave crash, plate, dragon, herald, baron, reset, or invade."]
+      : ["Kill conversion", "Na 'n kill: stop vir 2 sekondes en kies die beste conversion - wave crash, plate, dragon, herald, baron, reset of invade."]);
   } else if (data.killQuality === "shutdowns") {
-    positives.push(["Shutdown waarde", "Jy het belangrike goud teruggekry. Dit is groot as jy agter was of die enemy carry gestop het."]);
+    positives.push(en
+      ? ["Shutdown gold", "You took important shutdown bounties — that is a big deal when you were behind or stopped the enemy carry."]
+      : ["Shutdown waarde", "Jy het belangrike goud teruggekry. Dit is groot as jy agter was of die enemy carry gestop het."]);
   } else if (data.killQuality === "noConversion") {
-    mistakes.push(["Kills nie gebruik nie", "Jy het waarskynlik kills gekry, maar nie genoeg map waarde daarna geneem nie."]);
-    improvements.push(["Na-kill roetine", "Elke kill moet 'n volgende aksie he: shove, reset, ward, objective, tower, invade of roam."]);
+    mistakes.push(en
+      ? ["Kills not converted", `You got ${data.kills} kills but only ${data.objectives} objective${data.objectives === 1 ? "" : "s"}. Use kill momentum to push towers or secure dragons, not just to reset.`]
+      : ["Kills nie gebruik nie", "Jy het waarskynlik kills gekry, maar nie genoeg map waarde daarna geneem nie."]);
+    improvements.push(en
+      ? ["After-kill routine", "Every kill must lead to the next action: shove wave, take plate, secure dragon, push tower, invade, or roam."]
+      : ["Na-kill roetine", "Elke kill moet 'n volgende aksie he: shove, reset, ward, objective, tower, invade of roam."]);
   }
 
   if (data.farmPattern === "missedFreeWaves") {
-    mistakes.push(["Free waves gemis", "Jy het waarskynlik goud op die map gelos terwyl jy rondgestaan, gejaag of te lank gegroep het."]);
-    improvements.push(["Free gold", "Elke keer as niks spawn nie, kyk side waves eerste. Free wave onder tower is amper altyd beter as rondloop."]);
+    mistakes.push(en
+      ? ["Free waves missed", "You left gold on the map — probably by grouping mid, chasing kills, or standing around between actions."]
+      : ["Free waves gemis", "Jy het waarskynlik goud op die map gelos terwyl jy rondgestaan, gejaag of te lank gegroep het."]);
+    improvements.push(en
+      ? ["Collect free gold", "When nothing is spawning, check side lanes first. A free wave crashing under tower is almost always better than walking around."]
+      : ["Free gold", "Elke keer as niks spawn nie, kyk side waves eerste. Free wave onder tower is amper altyd beter as rondloop."]);
   } else if (data.farmPattern === "stoppedMidGame") {
-    mistakes.push(["Mid game farm drop", "Jou CS het waarskynlik na lane fase geval omdat jy te lank mid gegroep het."]);
-    improvements.push(["Mid game route", "Catch side wave, beweeg deur vision, groepeer dan. Moenie net mid ARAM as daar free side farm is nie."]);
+    mistakes.push(en
+      ? ["Farm dropped mid-game", "Your CS likely fell off after laning because you grouped mid without collecting side waves first."]
+      : ["Mid game farm drop", "Jou CS het waarskynlik na lane fase geval omdat jy te lank mid gegroep het."]);
+    improvements.push(en
+      ? ["Catch wave then group", "Catch the side wave, move through vision, then group for the objective. Do not ARAM mid while free farm dies on the sides."]
+      : ["Mid game route", "Catch side wave, beweeg deur vision, groepeer dan. Moenie net mid ARAM as daar free side farm is nie."]);
   } else if (data.farmPattern === "overfarmed") {
-    mistakes.push(["Te lank gefarm", "Jy het dalk veilig goud gekry, maar objective windows of teamfights gemis."]);
-    improvements.push(["Farm met timer", "Farm tot die volgende objective timer jou nodig het. By 60-90 sekondes moet jy al begin beweeg."]);
+    mistakes.push(en
+      ? ["Over-farming", "You farmed safely but likely missed objective windows or teamfights that your team needed you for."]
+      : ["Te lank gefarm", "Jy het dalk veilig goud gekry, maar objective windows of teamfights gemis."]);
+    improvements.push(en
+      ? ["Farm with a timer", "Farm until 60–90 seconds before the next objective, then start moving. Gold is only useful if the game is still winnable."]
+      : ["Farm met timer", "Farm tot die volgende objective timer jou nodig het. By 60-90 sekondes moet jy al begin beweeg."]);
   } else if (data.farmPattern === "steady") {
-    positives.push(["Konsekwente farming", "Jy het jou goudvloei stabiel gehou, wat jou items en scaling betroubaar maak."]);
+    positives.push(en
+      ? ["Consistent farming", "Your gold income stayed strong throughout — that makes your item spikes reliable and your impact consistent."]
+      : ["Konsekwente farming", "Jy het jou goudvloei stabiel gehou, wat jou items en scaling betroubaar maak."]);
   }
 
   if (data.routePattern === "lateObjective") {
-    mistakes.push(["Laat by objectives", "Jy het waarskynlik eers beweeg toe die objective reeds begin of river reeds verloor was."]);
-    improvements.push(["Route na objective", "Reset op 75-90 sekondes, loop deur veilige vision, en wees eerste in river met jou span."]);
+    mistakes.push(en
+      ? ["Late to objectives", "You probably only moved when the objective had already spawned — by then vision is lost and the fight is reactive."]
+      : ["Laat by objectives", "Jy het waarskynlik eers beweeg toe die objective reeds begin of river reeds verloor was."]);
+    improvements.push(en
+      ? ["Rotate 90 seconds early", "Reset at 75–90 seconds, walk through safe vision, and arrive in river with your team before the enemy does."]
+      : ["Route na objective", "Reset op 75-90 sekondes, loop deur veilige vision, en wees eerste in river met jou span."]);
   } else if (data.routePattern === "wrongSide") {
-    mistakes.push(["Verkeerde kant van map", "Jy was moontlik top toe dragon belangrik was, of bot toe baron setup nodig was."]);
-    improvements.push(["Map side plan", "Speel die kant waar die volgende objective of sterkste carry is. Side lane is goed net as jy pressure betyds omsit."]);
+    mistakes.push(en
+      ? ["Wrong side of the map", "You were on the wrong side — top when dragon was key, or bot when baron setup was needed."]
+      : ["Verkeerde kant van map", "Jy was moontlik top toe dragon belangrik was, of bot toe baron setup nodig was."]);
+    improvements.push(en
+      ? ["Play the objective side", "Be on the side of the next major objective. Side lane pressure is only worth it if you can convert it in time."]
+      : ["Map side plan", "Speel die kant waar die volgende objective of sterkste carry is. Side lane is goed net as jy pressure betyds omsit."]);
   } else if (data.routePattern === "randomRoams") {
-    mistakes.push(["Roams sonder setup", "As jy roam sonder wave crash, verloor jy minions en gee jy enemy tempo terug."]);
-    improvements.push(["Roam timing", "Roam na crash, na recall advantage, of wanneer enemy laner moet catch. Anders bly en fix wave."]);
+    mistakes.push(en
+      ? ["Roaming without setup", "You roamed before crashing the wave — that costs you minions and hands tempo back to the enemy laner."]
+      : ["Roams sonder setup", "As jy roam sonder wave crash, verloor jy minions en gee jy enemy tempo terug."]);
+    improvements.push(en
+      ? ["Roam timing", "Roam after crashing the wave, after a recall advantage, or when the enemy must catch the wave. Otherwise stay and fix the wave."]
+      : ["Roam timing", "Roam na crash, na recall advantage, of wanneer enemy laner moet catch. Anders bly en fix wave."]);
   } else {
-    positives.push(["Skoon routes", "Jou bewegings was waarskynlik gekoppel aan waves, resets en objective timers."]);
+    positives.push(en
+      ? ["Clean rotations", "Your movements were linked to waves, resets, and objective timers — that is how high-elo players think."]
+      : ["Skoon routes", "Jou bewegings was waarskynlik gekoppel aan waves, resets en objective timers."]);
   }
 
   if (data.deathPattern === "greed") {
-    mistakes.push(["Greed deaths", "Deaths vir een ekstra wave, plate of chase is duur omdat dit jou reset en objective tempo breek."]);
-    improvements.push(["Exit rule", "Voor jy nog een wave vat: tel missing enemies en vra of jou flash/escape beskikbaar is."]);
+    mistakes.push(en
+      ? ["Greedy deaths", "Dying for one extra wave, plate, or kill chase is expensive — it breaks your reset cycle and hands the enemy objective tempo."]
+      : ["Greed deaths", "Deaths vir een ekstra wave, plate of chase is duur omdat dit jou reset en objective tempo breek."]);
+    improvements.push(en
+      ? ["Exit rule", "Before taking another wave or chasing: count missing enemies and ask if your flash or escape is available."]
+      : ["Exit rule", "Voor jy nog een wave vat: tel missing enemies en vra of jou flash/escape beskikbaar is."]);
   } else if (data.deathPattern === "noVision") {
-    mistakes.push(["Deaths sonder vision", "Jy het waarskynlik donker areas betree of side lane gedruk sonder info."]);
-    improvements.push(["Donker map rule", "As twee of meer enemies missing is, beweeg net met vision, teammate naby, of cooldowns gereed."]);
+    mistakes.push(en
+      ? ["Deaths in dark areas", "You walked into areas with no vision — enemies were likely waiting there."]
+      : ["Deaths sonder vision", "Jy het waarskynlik donker areas betree of side lane gedruk sonder info."]);
+    improvements.push(en
+      ? ["Dark map rule", "If two or more enemies are missing, only move with vision, a teammate close by, or escape cooldowns ready."]
+      : ["Donker map rule", "As twee of meer enemies missing is, beweeg net met vision, teammate naby, of cooldowns gereed."]);
   } else if (data.deathPattern === "badFight") {
-    mistakes.push(["Slegte fight ingang", "Die probleem was waarskynlik nie net die fight nie, maar wanneer en hoe jy ingestap het."]);
-    improvements.push(["Fight ingang", "Wag vir belangrike cooldowns, kyk waar jou damage vandaan kom, en kies flank/front-to-back voor jy commit."]);
+    mistakes.push(en
+      ? ["Bad fight entry", "The problem was not just the fight itself — it was when and how you walked in."]
+      : ["Slegte fight ingang", "Die probleem was waarskynlik nie net die fight nie, maar wanneer en hoe jy ingestap het."]);
+    improvements.push(en
+      ? ["Fight entry", "Wait for key cooldowns, know where your damage is coming from, and choose your angle (flank or front-to-back) before committing."]
+      : ["Fight ingang", "Wag vir belangrike cooldowns, kyk waar jou damage vandaan kom, en kies flank/front-to-back voor jy commit."]);
   }
 
   if (data.teamfightPattern === "tooEarly") {
-    mistakes.push(["Te vroeg in fights", "Jy het moontlik engage of damage geneem voordat jou span kon follow."]);
-    improvements.push(["Fight timing", "Tel jou span se afstand en cooldowns. Engage net as hulle binne follow-up range is."]);
+    mistakes.push(en
+      ? ["Engaging too early", "You started the fight before your team could follow — solo engaging into 5 is almost never correct."]
+      : ["Te vroeg in fights", "Jy het moontlik engage of damage geneem voordat jou span kon follow."]);
+    improvements.push(en
+      ? ["Check your team first", "Count your team's distances and cooldowns. Only engage when they are within follow-up range."]
+      : ["Fight timing", "Tel jou span se afstand en cooldowns. Engage net as hulle binne follow-up range is."]);
   } else if (data.teamfightPattern === "tooLate") {
-    mistakes.push(["Te laat in fights", "Jy het dalk gewag tot die fight klaar verloor was voordat jy damage of utility gegee het."]);
-    improvements.push(["Vroeere posisie", "Staan voor die fight reeds op 'n plek waar jy damage kan doen sonder om eers deur chaos te loop."]);
+    mistakes.push(en
+      ? ["Too late to fights", "You held back until the fight was nearly over — late damage rarely changes outcomes."]
+      : ["Te laat in fights", "Jy het dalk gewag tot die fight klaar verloor was voordat jy damage of utility gegee het."]);
+    improvements.push(en
+      ? ["Pre-position", "Before a fight starts, already be somewhere that you can deal damage without walking through chaos first."]
+      : ["Vroeere posisie", "Staan voor die fight reeds op 'n plek waar jy damage kan doen sonder om eers deur chaos te loop."]);
   } else if (data.teamfightPattern === "wrongTarget") {
-    mistakes.push(["Verkeerde target", "Jy het waarskynlik damage op 'n target gesit wat nie die fight sou wen nie."]);
-    improvements.push(["Target plan", "Voor fight: kies of jou job backline dive, frontline shred, peel, of zone control is."]);
+    mistakes.push(en
+      ? ["Wrong target", "You spent damage on a target that would not win the fight — the enemy carry likely got through untouched."]
+      : ["Verkeerde target", "Jy het waarskynlik damage op 'n target gesit wat nie die fight sou wen nie."]);
+    improvements.push(en
+      ? ["Choose your target", "Before the fight, decide your job: dive backline, shred frontline, peel your carry, or zone the flanks."]
+      : ["Target plan", "Voor fight: kies of jou job backline dive, frontline shred, peel, of zone control is."]);
   } else if (data.teamfightPattern === "splitTooMuch") {
-    mistakes.push(["Nie by fights nie", "Splitpush is net goed as dit towers vat of enemies trek. Anders verloor jou span 4v5."]);
-    improvements.push(["Splitpush timer", "As TP/rotate nie moontlik is nie, push net wanneer jou span nie kan geforce word nie."]);
+    mistakes.push(en
+      ? ["Missing teamfights", "Your split pushing is only valuable if you take a tower or pull two enemies. Otherwise your team is 4v5."]
+      : ["Nie by fights nie", "Splitpush is net goed as dit towers vat of enemies trek. Anders verloor jou span 4v5."]);
+    improvements.push(en
+      ? ["Split with a timer", "If TP or rotating is not possible, only push when your team cannot be forced into a fight."]
+      : ["Splitpush timer", "As TP/rotate nie moontlik is nie, push net wanneer jou span nie kan geforce word nie."]);
   } else {
-    positives.push(["Teamfight waarde", "Jy het waarskynlik damage, peel, engage of presence gegee toe jou span dit nodig gehad het."]);
+    positives.push(en
+      ? ["Good teamfight value", "You contributed damage, peel, engage, or presence when your team needed it most."]
+      : ["Teamfight waarde", "Jy het waarskynlik damage, peel, engage of presence gegee toe jou span dit nodig gehad het."]);
   }
 
   data.tags.forEach((tag) => {
@@ -512,20 +637,30 @@ function analyse(data) {
 
   const noteText = data.notes.toLowerCase();
   if (noteText.includes("tilt") || noteText.includes("angry") || noteText.includes("kwaad")) {
-    mistakes.push(["Mental reset", "Jou notas wys tilt/frustrasie. Dit maak gewoonlik volgende besluite vinniger maar swakker."]);
-    improvements.push(["Kort reset", "Na 'n slegte fight: haal asem, ping minder, vra net: wat is die volgende wave/objective?"]);
+    mistakes.push(en
+      ? ["Mental reset needed", "Your notes suggest tilt or frustration. That usually speeds up decisions without improving them."]
+      : ["Mental reset", "Jou notas wys tilt/frustrasie. Dit maak gewoonlik volgende besluite vinniger maar swakker."]);
+    improvements.push(en
+      ? ["Short reset", "After a bad fight: breathe, reduce pings, and ask only: what is the next wave or objective?"]
+      : ["Kort reset", "Na 'n slegte fight: haal asem, ping minder, vra net: wat is die volgende wave/objective?"]);
   }
 
   if (!mistakes.length) {
-    mistakes.push(["Geen groot rooi vlag", "Op hierdie data lyk jou game stabiel. Die volgende stap is om een klein patroon per game te verbeter."]);
+    mistakes.push(en
+      ? ["No major red flags", "On this data your game looks stable. The next step is improving one small pattern per game."]
+      : ["Geen groot rooi vlag", "Op hierdie data lyk jou game stabiel. Die volgende stap is om een klein patroon per game te verbeter."]);
   }
 
   if (!improvements.length) {
-    improvements.push(["Maak jou voordeel groter", "Kies een sterk punt en druk dit harder: lane lead na plates, roam, objective of vision control."]);
+    improvements.push(en
+      ? ["Push your strengths harder", "Pick one strong point and amplify it: lane lead into plates, roam, objective, or vision control."]
+      : ["Maak jou voordeel groter", "Kies een sterk punt en druk dit harder: lane lead na plates, roam, objective of vision control."]);
   }
 
   if (!positives.length) {
-    positives.push(["Review mindset", "Jy het die game ontleed in plaas daarvan om net die uitslag te oordeel. Dit is reeds hoe jy beter word."]);
+    positives.push(en
+      ? ["Review mindset", "You analysed the game instead of just judging the result. That is already how you get better."]
+      : ["Review mindset", "Jy het die game ontleed in plaas daarvan om net die uitslag te oordeel. Dit is reeds hoe jy beter word."]);
   }
 
   return {
@@ -637,78 +772,152 @@ function focusLabel(focus) {
 function buildTrainingPlan(data, result) {
   const focus = chooseTrainingFocus(data, result);
   const target = roleTargets[data.role] || roleTargets.unknown;
-  const levelTip = {
-    bronze: "Hou dit eenvoudig: een habit per game, geen fancy plays nodig nie.",
-    gold: "Meet die habit elke game en kyk of jou deaths/objectives verbeter.",
-    emerald: "Voeg timers en wave state by jou besluit voordat jy beweeg.",
-    master: "Soek klein tempo windows: reset timings, fog pressure en cross-map trades.",
-  }[data.skillLevel];
 
-  const plans = {
+  const levelTip = currentLang === "en"
+    ? {
+        bronze: "Keep it simple: one habit per game, no fancy plays needed.",
+        gold: "Track the habit every game and check if your deaths and objectives improve.",
+        emerald: "Add timers and wave state to your decision before you move.",
+        master: "Look for small tempo windows: reset timings, fog pressure, and cross-map trades.",
+      }[data.skillLevel]
+    : {
+        bronze: "Hou dit eenvoudig: een habit per game, geen fancy plays nodig nie.",
+        gold: "Meet die habit elke game en kyk of jou deaths/objectives verbeter.",
+        emerald: "Voeg timers en wave state by jou besluit voordat jy beweeg.",
+        master: "Soek klein tempo windows: reset timings, fog pressure en cross-map trades.",
+      }[data.skillLevel];
+
+  const plans = currentLang === "en" ? {
+    laning: [
+      ["Laning drill", "First 10 minutes: only trade when your wave is bigger, an enemy key cooldown is down, or the enemy is going to last-hit."],
+      ["Wave check", "Before every recall or roam: can I crash the wave? If not, stay and fix the wave first."],
+      ["Review marker", "Rewatch only minutes 1–6 and mark the first trade that made the lane difficult."],
+    ],
+    farm: [
+      ["CS target", `Aim for ${Math.max(5, target.cs - 0.5).toFixed(1)} CS/min for ${data.gamesToday} games. Skip random fights with no objective payoff.`],
+      ["Mid game route", "After laning: catch side wave, move through vision, group for objective. Repeat every wave cycle."],
+      ["Free wave rule", "If a wave is crashing under your tower, take it before standing around mid."],
+    ],
+    jungleTracking: [
+      ["First clear read", "At 1:30 ask where the enemy jungler started. At 3:15 ping where they are likely to be."],
+      ["Gank timer", "Play safe when your wave is pushed and the enemy jungler's side is unknown."],
+      ["Review marker", "Every death before 8 minutes: was the enemy jungler's position known or guessed?"],
+    ],
+    topWave: [
+      ["Top wave control", "Play the first 4 waves for wave state: slow push, crash, reset, or freeze. Never fight on a bad wave."],
+      ["Side lane plan", "After laning: push the side wave only to where you have vision, then rotate to objectives or pull pressure safely."],
+      ["TP / rotate check", "Before splitting: can you TP to the dragon/baron fight in time, or do you take tower while they fight?"],
+    ],
+    jungleTempo: [
+      ["Clear with purpose", "Every clear path must end with a reason: gank, invade, objective, countergank, or reset. No random walking."],
+      ["Lane state read", "Gank lanes that are set up: enemy pushed, teammate has CC, or enemy flash is down. Force fewer low-chance ganks."],
+      ["Objective setup", "45–90 seconds before an objective: clear toward that side and place vision before the enemy gets there."],
+    ],
+    midTempo: [
+      ["Mid priority", "Crash the wave before roaming. If you roam on a bad wave, you lose minions and give enemy tempo back."],
+      ["Roam window", "Roam after cannon wave, an enemy recall, or when your jungler is playing the same side."],
+      ["Fog pressure", "If you cannot roam, disappear briefly from vision so side lanes are forced to respect you."],
+    ],
+    adcPositioning: [
+      ["Damage without dying", "Before a fight: stand where you can hit the nearest threat without walking through frontline or CC."],
+      ["Wave income", "Catch safe waves until your item spike. Do not ARAM mid when there are free bot or top waves under tower."],
+      ["Threat tracking", "Keep the enemy engage spell in your head. You can only step forward once it is used or on cooldown."],
+    ],
+    supportVision: [
+      ["Vision line", "Ward where your team wants to play next, not just the bush beside you."],
+      ["Roam timing", "Roam after the bot wave crashes or when your ADC can farm safely. Never abandon a losing wave."],
+      ["Peel or engage", "Before a fight, decide your job: engage, peel, or vision denial. Do not play half-half."],
+    ],
+    objectives: [
+      ["90 second rule", "90 seconds before dragon/baron: push your wave, reset, buy a control ward, and move first."],
+      ["No late river", "Never enter river when the objective has already spawned and vision is lost. Trade cross-map if you are late."],
+      ["Kill conversion", "After every kill: pick tower, objective, invade, deep ward, or reset. No aimless chasing."],
+    ],
+    teamfights: [
+      ["Job before fight", "Before the fight starts, say your role out loud: engage, peel, frontline damage, backline dive, or zone."],
+      ["Cooldown check", "Only commit when your key spell and escape are up, or when the enemy key cooldown is down."],
+      ["Replay marker", "Rewatch the first 3 seconds of every fight: was your position right before it started?"],
+    ],
+    playingAhead: [
+      ["Use your lead", "When you are ahead: push waves, place deep vision, take jungle camps and objectives. No 50/50 chasing without payoff."],
+      ["Protect your shutdown", "If you have a big shutdown bounty, only fight with vision and teammates close. Your death is their comeback."],
+      ["Close it out", "Every lead must convert to tower, dragon/baron, inhibitor pressure, or enemy jungle control — not just more kills."],
+    ],
+    playingBehind: [
+      ["Stabilise first", "When behind: farm under tower, give up bad waves, and only fight with numbers advantage or a shutdown opportunity."],
+      ["No fair fights", "Do not take 1v1 or 2v2 fights when your items are behind. Play for picks, traps, and enemy mistakes instead."],
+      ["Build back income", "Find free side waves and safe jungle camps. Your goal is reaching an item spike, not making flashy plays."],
+    ],
+    vision: [
+      ["Ward with purpose", "Ward where you want to play next, not just where you are standing now."],
+      ["Dark map rule", "If two or more enemies are missing, do not push another wave without vision, an escape spell, or a teammate nearby."],
+      ["Control ward habit", "Buy a control ward before objective setup, not after the fight has already started."],
+    ],
+  } : {
     laning: [
       ["Laning drill", "Vir die eerste 10 minute: trade net wanneer jou wave groter is, enemy key cooldown uit is, of enemy gaan last-hit."],
       ["Wave vraag", "Voor elke recall/roam: kan ek die wave crash? As nee, bly en fix eers die wave."],
       ["Review marker", "Kyk net na minute 1-6 terug en merk die eerste trade wat die lane moeilik gemaak het."],
     ],
     farm: [
-      ["CS target", `Mik vir ${Math.max(5, target.cs - 0.5).toFixed(1)} CS/min vir ${data.gamesToday} games. Ignoreer random fights wat geen objective gee nie.`],
-      ["Mid game route", "Na lane fase: catch side wave, beweeg deur vision, groepeer vir objective. Herhaal dit elke wave cycle."],
-      ["Free wave rule", "As daar 'n wave onder jou tower inkom, vat dit voordat jy mid rondstaan."],
+      ["CS teiken", `Mik vir ${Math.max(5, target.cs - 0.5).toFixed(1)} CS/min vir ${data.gamesToday} games. Ignoreer random fights wat geen objective gee nie.`],
+      ["Mid game roete", "Na lane fase: catch side wave, beweeg deur vision, groepeer vir objective. Herhaal dit elke wave cycle."],
+      ["Free wave reël", "As daar 'n wave onder jou tower inkom, vat dit voordat jy mid rondstaan."],
     ],
     jungleTracking: [
-      ["First clear read", "By 1:30: vra waar enemy jungler begin het. By 3:15: ping waar hy waarskynlik eindig."],
+      ["Eerste clear lees", "By 1:30: vra waar enemy jungler begin het. By 3:15: ping waar hy waarskynlik eindig."],
       ["Gank timer", "Speel veilig wanneer jou wave gepush is en enemy jungler se kant onbekend is."],
       ["Review marker", "Elke death voor 8 minute: was enemy jungler se posisie bekend of geraai?"],
     ],
     topWave: [
-      ["Top wave control", "Speel die eerste 4 waves vir wave state: slow push, crash, reset of freeze. Moenie fight as jou wave sleg is nie."],
+      ["Top wave beheer", "Speel die eerste 4 waves vir wave state: slow push, crash, reset of freeze. Moenie fight as jou wave sleg is nie."],
       ["Side lane plan", "Na lane fase: druk side wave net tot waar jy vision het, dan beweeg na objective of trek pressure veilig."],
       ["TP / rotate check", "Voor jy split: kan jy betyds by dragon/baron fight wees, of vat jy tower as hulle fight?"],
     ],
     jungleTempo: [
-      ["Clear to purpose", "Elke clear moet eindig met 'n rede: gank, invade, objective, countergank of reset. Moenie random rondloop nie."],
-      ["Lane state read", "Gank lanes wat setup het: enemy gepush, teammate CC, of enemy flash down. Force minder low-chance ganks."],
+      ["Clear met doel", "Elke clear moet eindig met 'n rede: gank, invade, objective, countergank of reset. Moenie random rondloop nie."],
+      ["Lane state lees", "Gank lanes wat setup het: enemy gepush, teammate CC, of enemy flash down. Force minder low-chance ganks."],
       ["Objective setup", "45-90 sekondes voor objective: clear na daardie kant toe en sit vision voor die enemy daar is."],
     ],
     midTempo: [
-      ["Mid priority", "Crash wave voor roam. As jy nie crash nie, verloor jy tempo en minions vir 'n coinflip roam."],
-      ["Roam window", "Roam na cannon wave, enemy recall, of wanneer jou jungler dieselfde kant speel."],
-      ["Fog pressure", "As jy nie kan roam nie, verdwyn kort uit vision sodat side lanes moet respekteer."],
+      ["Mid prioriteit", "Crash wave voor roam. As jy nie crash nie, verloor jy tempo en minions vir 'n coinflip roam."],
+      ["Roam venster", "Roam na cannon wave, enemy recall, of wanneer jou jungler dieselfde kant speel."],
+      ["Fog druk", "As jy nie kan roam nie, verdwyn kort uit vision sodat side lanes moet respekteer."],
     ],
     adcPositioning: [
-      ["Damage without dying", "Voor fight: staan waar jy die naaste threat kan hit sonder om deur frontline/CC te loop."],
-      ["Wave income", "Catch safe waves tot jou item spike. Moenie mid rondstaan as daar free bot/top wave onder tower is nie."],
-      ["Threat tracking", "Hou enemy engage spell in jou kop. Jy mag eers vorentoe stap wanneer dit gemis of gebruik is."],
+      ["Skade sonder dood", "Voor fight: staan waar jy die naaste threat kan hit sonder om deur frontline/CC te loop."],
+      ["Wave inkomste", "Catch safe waves tot jou item spike. Moenie mid rondstaan as daar free bot/top wave onder tower is nie."],
+      ["Threat opsporing", "Hou enemy engage spell in jou kop. Jy mag eers vorentoe stap wanneer dit gemis of gebruik is."],
     ],
     supportVision: [
-      ["Vision line", "Ward die kant waar jou span volgende wil speel, nie net die bush langs jou nie."],
-      ["Roam timing", "Roam nadat bot wave crash of jou ADC veilig kan farm. Moenie jou ADC in 'n doomed wave los nie."],
-      ["Peel or engage", "Voor fight: besluit of jou job engage, peel of vision denial is. Moenie half-half speel nie."],
+      ["Vision lyn", "Ward die kant waar jou span volgende wil speel, nie net die bush langs jou nie."],
+      ["Roam tydsberekening", "Roam nadat bot wave crash of jou ADC veilig kan farm. Moenie jou ADC in 'n doomed wave los nie."],
+      ["Peel of engage", "Voor fight: besluit of jou job engage, peel of vision denial is. Moenie half-half speel nie."],
     ],
     objectives: [
-      ["90 sekonde rule", "By 90 sekondes voor dragon/baron: push wave, reset, koop control ward, beweeg eerste."],
-      ["No late river", "Moenie eers river instap wanneer objective reeds spawn en vision verloor is nie. Trade cross-map as jy laat is."],
-      ["Conversion", "Na elke kill: kies tower, objective, invade, deep ward of reset. Geen doelloose chase nie."],
+      ["90 sekonde reël", "By 90 sekondes voor dragon/baron: push wave, reset, koop control ward, beweeg eerste."],
+      ["Geen laat rivier", "Moenie eers river instap wanneer objective reeds spawn en vision verloor is nie. Trade cross-map as jy laat is."],
+      ["Kill omskakeling", "Na elke kill: kies tower, objective, invade, deep ward of reset. Geen doelloose chase nie."],
     ],
     teamfights: [
-      ["Job voor fight", "Voor fight begin, se jou job hardop: engage, peel, frontline damage, backline dive, of zone."],
+      ["Job voor fight", "Voor fight begin, sê jou job hardop: engage, peel, frontline damage, backline dive, of zone."],
       ["Cooldown check", "Commit eers wanneer jou belangrikste spell en escape beskikbaar is, of wanneer enemy key cooldown uit is."],
       ["Replay marker", "Kyk die eerste 3 sekondes van elke fight: was jou posisie reg voordat die fight begin het?"],
     ],
     playingAhead: [
-      ["Lead conversion", "As jy voor is: druk wave, sit deep vision, vat jungle camp/objective. Geen 50/50 chase sonder payoff nie."],
-      ["Shutdown protection", "As jy shutdown het, fight net met vision en teammate range. Jou death is die enemy se comeback."],
-      ["Close plan", "Elke lead moet eindig in tower, dragon/baron, inhibitor druk, of enemy jungle control."],
+      ["Lead omskakeling", "As jy voor is: druk wave, sit deep vision, vat jungle camp/objective. Geen 50/50 chase sonder payoff nie."],
+      ["Shutdown beskerming", "As jy 'n groot shutdown het, fight net met vision en teammate range. Jou death is die enemy se comeback."],
+      ["Sluit die game", "Elke lead moet eindig in tower, dragon/baron, inhibitor druk, of enemy jungle control — nie net meer kills nie."],
     ],
     playingBehind: [
-      ["Stabilize", "As jy agter is: farm onder tower, gee slegte waves op, en fight net met numbers advantage of shutdown setup."],
-      ["No fair fights", "Moenie 1v1/2v2 vat as items agter is nie. Speel vir picks, traps en enemy mistakes."],
-      ["Comeback income", "Soek free side waves en safe camps. Jou doel is item breakpoint, nie hero play nie."],
+      ["Stabiliseer eers", "As jy agter is: farm onder tower, gee slegte waves op, en fight net met numbers advantage of shutdown setup."],
+      ["Geen fair fights", "Moenie 1v1/2v2 vat as items agter is nie. Speel vir picks, traps en enemy mistakes."],
+      ["Bou inkomste terug", "Soek free side waves en safe camps. Jou doel is item breakpoint, nie hero play nie."],
     ],
     vision: [
-      ["Ward with purpose", "Ward die kant waar jy volgende wil speel, nie net waar jy nou staan nie."],
-      ["Dark map rule", "As twee enemies missing is, push nie nog een wave sonder vision, escape spell of teammate naby nie."],
-      ["Control ward habit", "Koop control ward voor objective setup, nie na die fight klaar begin het nie."],
+      ["Ward met doel", "Ward die kant waar jy volgende wil speel, nie net waar jy nou staan nie."],
+      ["Donker map reël", "As twee enemies missing is, push nie nog een wave sonder vision, escape spell of teammate naby nie."],
+      ["Control ward gewoonte", "Koop control ward voor objective setup, nie na die fight klaar begin het nie."],
     ],
   };
 
@@ -975,10 +1184,50 @@ function renderLiveMonitor(status = "idle") {
   outputs.liveTime.textContent = last?.stats ? `${last.stats.minutes} min` : "0 min";
 
   if (status === "recording") {
-    outputs.postGameSummary.textContent = t("recordingSummary");
+    outputs.postGameSummary.textContent = getLiveTip(last?.stats);
   } else if (status === "idle" && !liveSession.saved) {
     outputs.postGameSummary.textContent = t("waitingSummary");
   }
+}
+
+function getLiveTip(stats) {
+  if (!stats) return t("recordingSummary");
+  const en = currentLang === "en";
+  const role = liveSession.lastGame?.role || "unknown";
+  const target = roleTargets[role] || roleTargets.unknown;
+  const mins = stats.minutes || 1;
+  const cspm = stats.cs / mins;
+  const vpm = stats.vision / mins;
+  const kda = (stats.kills + stats.assists) / Math.max(1, stats.deaths);
+  const tips = [];
+
+  if (cspm < target.cs * 0.75 && role !== "support") {
+    tips.push(en
+      ? `CS is low (${cspm.toFixed(1)}/min). Focus on clearing waves before grouping.`
+      : `CS is laag (${cspm.toFixed(1)}/min). Fokus op waves voor jy groepeer.`);
+  }
+  if (stats.deaths >= 4 && mins < 15) {
+    tips.push(en
+      ? `${stats.deaths} deaths before 15 min — play safer and let the wave come to you.`
+      : `${stats.deaths} deaths voor 15 min — speel veiliger en laat die wave na jou kom.`);
+  }
+  if (vpm < target.vision * 0.5 && mins > 10) {
+    tips.push(en
+      ? "Buy a control ward next back — vision wins objectives."
+      : "Koop 'n control ward next recall — vision wen objectives.");
+  }
+  if (kda >= 4 && stats.kills >= 3) {
+    tips.push(en
+      ? `Good KDA (${kda.toFixed(1)}) — use this lead to push waves and take objectives, not more kills.`
+      : `Goeie KDA (${kda.toFixed(1)}) — gebruik hierdie lead vir objectives, nie net kills nie.`);
+  }
+
+  if (!tips.length) {
+    tips.push(en
+      ? `${stats.kills}/${stats.deaths}/${stats.assists} — stay focused on your main habit this game.`
+      : `${stats.kills}/${stats.deaths}/${stats.assists} — bly gefokus op jou hoof habit hierdie game.`);
+  }
+  return tips[Math.floor(Date.now() / 30000) % tips.length];
 }
 
 function queueTypeLabel(type) {
@@ -1173,8 +1422,9 @@ function renderDetection(game, error) {
   const role = game.role ? game.role.toUpperCase() : (currentLang === "en" ? "role unknown" : "role onbekend");
   const mode = game.queue || game.gameMode || (currentLang === "en" ? "mode unknown" : "mode onbekend");
   const queueType = queueTypeLabel(game.queueType);
+  const source = game.source && game.source !== game.queue ? ` | ${game.source}` : "";
   outputs.detectTitle.textContent = `${champion} | ${role}`;
-  outputs.detectMeta.textContent = `${queueType} | ${mode} | ${game.source || "League Client"}`;
+  outputs.detectMeta.textContent = `${queueType} | ${mode}${source}`;
 
   if (game.queueType === "aram") {
     outputs.detectTitle.textContent = t("ignoredAramTitle");
@@ -1184,6 +1434,8 @@ function renderDetection(game, error) {
 
 function renderUpdateStatus(status) {
   if (!status) return;
+  const showStrip = ["available", "downloading", "ready", "error"].includes(status.state);
+  document.querySelector("#updateStrip").classList.toggle("hidden", !showStrip);
   outputs.updateTitle.textContent = status.state === "ready" ? t("updateReady") : t("updateStatus");
   outputs.updateMeta.textContent = status.message || t("noUpdateMessage");
   restartUpdateBtn.classList.toggle("hidden", status.state !== "ready");
