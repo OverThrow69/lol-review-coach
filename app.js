@@ -1569,6 +1569,12 @@ function recordLiveSnapshot(game) {
   const overlayData = buildOverlayTip(game, prevSnap?.stats);
   window.liveOverlay?.push(overlayData);
   window.liveOverlay?.show(20, 20);
+
+  // Auto-hide overlay if no new snapshot arrives within 45 seconds
+  clearTimeout(liveSession.overlayTimeout);
+  liveSession.overlayTimeout = setTimeout(() => {
+    finishLiveSession();
+  }, 45000);
 }
 
 function buildOverlayTip(game, prevStats) {
@@ -1761,6 +1767,7 @@ function formatCountdown(secs) {
 }
 
 function finishLiveSession() {
+  clearTimeout(liveSession.overlayTimeout);
   window.liveOverlay?.hide();
   if (!liveSession.active || liveSession.saved || liveSession.snapshots.length === 0) {
     renderLiveMonitor(liveSession.saved ? "finished" : "idle");
