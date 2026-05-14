@@ -1761,6 +1761,7 @@ function formatCountdown(secs) {
 }
 
 function finishLiveSession() {
+  window.liveOverlay?.hide();
   if (!liveSession.active || liveSession.saved || liveSession.snapshots.length === 0) {
     renderLiveMonitor(liveSession.saved ? "finished" : "idle");
     return;
@@ -2040,11 +2041,14 @@ async function connectProfile() {
       ignoreAramGame(context.game);
     } else if (context.game?.source === "In-game" && context.game?.stats) {
       recordLiveSnapshot(context.game);
+    } else {
+      finishLiveSession();
     }
     render();
   } catch (error) {
     activeProfile = null;
     renderProfile(null, error.message);
+    finishLiveSession();
   } finally {
     profileBtn.disabled = false;
     profileBtn.textContent = t("connectProfile");
