@@ -504,14 +504,26 @@ async function getGameContext() {
 
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
+  // A zombie process is holding the lock — kill it and relaunch fresh
+  const { execSync } = require("child_process");
+  try {
+    execSync(`taskkill /F /IM "LoL Review Coach.exe" /FI "PID ne ${process.pid}"`, { stdio: "ignore" });
+  } catch (_) {}
+  try {
+    execSync(`taskkill /F /IM "electron.exe" /FI "PID ne ${process.pid}"`, { stdio: "ignore" });
+  } catch (_) {}
+  app.relaunch();
   app.quit();
 } else {
   app.on("second-instance", () => {
     try {
-      if (!mainWindow || mainWindow.isDestroyed()) return;
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        app.quit();
+        return;
+      }
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-    } catch (_) {}
+    } catch (_) { app.quit(); }
   });
 }
 
