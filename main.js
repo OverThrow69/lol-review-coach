@@ -52,6 +52,7 @@ function createWindow() {
   });
 
   mainWindow = win;
+  win.on("closed", () => { mainWindow = null; });
   win.loadFile("index.html");
 }
 
@@ -506,10 +507,11 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    try {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-    }
+    } catch (_) {}
   });
 }
 
