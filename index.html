@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="af">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LoL Review Coach</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Auth overlay — wys totdat die gebruiker ingemeld is -->
+    <div id="authOverlay" class="auth-overlay">
+      <div id="authLoading" class="auth-loading">
+        <div class="auth-spinner"></div>
+        <p>Laai...</p>
+      </div>
+      <div id="authCard" class="auth-card hidden">
+        <header class="auth-header">
+          <p class="eyebrow">League of Legends</p>
+          <h1>Review Coach</h1>
+        </header>
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="loginTabBtn" type="button">Aanmeld</button>
+          <button class="auth-tab" id="registerTabBtn" type="button">Registreer</button>
+        </div>
+        <form id="authForm" class="auth-form" novalidate>
+          <label>
+            E-pos adres
+            <input id="authEmail" type="email" placeholder="jou@email.com" autocomplete="email" required />
+          </label>
+          <label>
+            Wagwoord
+            <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" required minlength="6" />
+          </label>
+          <div id="authError" class="auth-error hidden"></div>
+          <button type="submit" id="authSubmitBtn" class="auth-submit">Aanmeld</button>
+        </form>
+        <button id="forgotPasswordBtn" class="auth-link" type="button">Wagwoord vergeet?</button>
+      </div>
+    </div>
+
+    <main class="app-shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">League of Legends</p>
+            <h1>Review Coach</h1>
+          </div>
+          <div class="top-actions">
+            <select id="languageSelect" class="language-select" aria-label="Language">
+              <option value="af">Afrikaans</option>
+              <option value="en">English</option>
+            </select>
+            <button id="updateBtn" class="text-button" type="button">Check Updates</button>
+            <button id="profileBtn" class="text-button" type="button">Connect Profile</button>
+            <button id="resetBtn" class="icon-button" type="button" aria-label="Maak vorm skoon" title="Maak vorm skoon">
+              <span aria-hidden="true">R</span>
+            </button>
+            <div class="auth-user-info" id="authUserInfo">
+              <span id="authUserEmail" class="auth-user-email"></span>
+              <button id="logoutBtn" class="text-button" type="button" data-i18n="logout">Teken uit</button>
+            </div>
+          </div>
+        </header>
+
+        <section class="profile-strip" id="profileStrip">
+          <div class="profile-icon" id="profileIcon">?</div>
+          <div>
+            <p class="eyebrow">Aktiewe profiel</p>
+            <strong id="profileName">Nie gekoppel nie</strong>
+            <span id="profileMeta">Maak League Client oop en druk Connect Profile.</span>
+          </div>
+        </section>
+
+        <section class="detect-strip" id="detectStrip">
+          <div>
+            <p class="eyebrow">Auto detect</p>
+            <strong id="detectTitle">Wag vir League Client</strong>
+            <span id="detectMeta">Die app vul champion, role en game mode self in wanneer dit beskikbaar is.</span>
+          </div>
+        </section>
+
+        <section class="update-strip" id="updateStrip">
+          <div>
+            <p class="eyebrow">Updates</p>
+            <strong id="updateTitle">Release channel ready</strong>
+            <span id="updateMeta">Wanneer jy builds op GitHub Releases publish, kan testers updates van hier af kry.</span>
+          </div>
+          <button id="restartUpdateBtn" class="text-button hidden" type="button">Restart</button>
+        </section>
+
+        <section class="live-monitor" id="liveMonitor">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Live monitor</p>
+              <h2 id="liveTitle">Waiting for match</h2>
+            </div>
+            <span id="liveBadge">Idle</span>
+          </div>
+          <div class="live-grid">
+            <article>
+              <strong id="liveKda">0/0/0</strong>
+              <span>KDA</span>
+            </article>
+            <article>
+              <strong id="liveFarm">0 CS</strong>
+              <span>Farm</span>
+            </article>
+            <article>
+              <strong id="liveTime">0 min</strong>
+              <span>Game time</span>
+            </article>
+            <article>
+              <strong id="liveSnapshots">0</strong>
+              <span>Snapshots</span>
+            </article>
+          </div>
+          <p id="postGameSummary" class="post-game-summary">Die review sal outomaties verskyn wanneer jou match eindig.</p>
+        </section>
+
+        <section class="coach-board" aria-labelledby="coach-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Ready Queue</p>
+              <h2 id="coach-heading" data-i18n="todayPlan">Vandag se speelplan</h2>
+            </div>
+            <button id="saveReviewBtn" class="text-button" type="button">Save Review</button>
+          </div>
+          <div class="coach-grid">
+            <article>
+              <strong id="primaryHabit">Farm</strong>
+              <span data-i18n="mainHabit">Main habit</span>
+            </article>
+            <article>
+              <strong id="preGameRule">90s objective setup</strong>
+              <span data-i18n="inGameRule">In-game rule</span>
+            </article>
+            <article>
+              <strong id="sessionStatus">Begin rustig</strong>
+              <span data-i18n="sessionNote">Session note</span>
+            </article>
+          </div>
+          <ol id="sessionPlan" class="session-plan"></ol>
+        </section>
+
+        <section class="panel input-panel" aria-labelledby="match-heading">
+          <div class="panel-heading">
+            <h2 id="match-heading">Match Details</h2>
+            <span id="saveState">Outomaties gestoor</span>
+          </div>
+
+          <form id="reviewForm">
+            <div class="grid two">
+              <label>
+                Champion (auto)
+                <input id="champion" name="champion" type="text" placeholder="Detecting..." autocomplete="off" readonly />
+              </label>
+              <label>
+                Role / lane (auto)
+                <select id="role" name="role" disabled>
+                  <option value="">Detecting...</option>
+                  <option value="top">Top</option>
+                  <option value="jungle">Jungle</option>
+                  <option value="mid">Mid</option>
+                  <option value="adc">ADC</option>
+                  <option value="support">Support</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid two">
+              <label>
+                Game mode / queue
+                <input id="gameMode" name="gameMode" type="text" placeholder="Auto-detected" autocomplete="off" />
+              </label>
+              <label>
+                Detection source
+                <input id="detectSource" name="detectSource" type="text" placeholder="League Client" autocomplete="off" readonly />
+              </label>
+            </div>
+
+            <div class="grid three">
+              <label>
+                Kills
+                <input id="kills" name="kills" type="number" min="0" value="0" readonly />
+              </label>
+              <label>
+                Deaths
+                <input id="deaths" name="deaths" type="number" min="0" value="0" readonly />
+              </label>
+              <label>
+                Assists
+                <input id="assists" name="assists" type="number" min="0" value="0" readonly />
+              </label>
+            </div>
+
+            <div class="grid three">
+              <label>
+                CS
+                <input id="cs" name="cs" type="number" min="0" value="0" readonly />
+              </label>
+              <label>
+                Match lengte
+                <input id="minutes" name="minutes" type="number" min="1" value="1" readonly />
+              </label>
+              <label>
+                Kill deelname %
+                <input id="kp" name="kp" type="number" min="0" max="100" value="0" readonly />
+              </label>
+            </div>
+
+            <div class="grid three">
+              <label>
+                Vision score
+                <input id="vision" name="vision" type="number" min="0" value="0" readonly />
+              </label>
+              <label>
+                Control wards
+                <input id="controlWards" name="controlWards" type="number" min="0" value="0" readonly />
+              </label>
+              <label>
+                Objectives gehelp
+                <input id="objectives" name="objectives" type="number" min="0" value="0" readonly />
+              </label>
+            </div>
+
+            <div class="grid three">
+              <label>
+                Game state
+                <select id="goldState" name="goldState" disabled>
+                  <option value="even">Even</option>
+                  <option value="ahead">Ek was voor</option>
+                  <option value="behind">Ek was agter</option>
+                </select>
+              </label>
+              <label>
+                Lane fase
+                <select id="laneState" name="laneState" disabled>
+                  <option value="stable">Stabiel</option>
+                  <option value="won">Lane gewen</option>
+                  <option value="lost">Lane verloor</option>
+                  <option value="ignoredWave">Wave beheer verloor</option>
+                </select>
+              </label>
+              <label>
+                Kills
+                <select id="killQuality" name="killQuality" disabled>
+                  <option value="useful">Goeie kills</option>
+                  <option value="chased">Kills gejaag</option>
+                  <option value="shutdowns">Shutdowns gekry</option>
+                  <option value="noConversion">Kills nie gebruik nie</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid three">
+              <label>
+                Farming
+                <select id="farmPattern" name="farmPattern" disabled>
+                  <option value="steady">Konsekwent</option>
+                  <option value="missedFreeWaves">Free waves gemis</option>
+                  <option value="stoppedMidGame">Mid game gestop farm</option>
+                  <option value="overfarmed">Te lank net gefarm</option>
+                </select>
+              </label>
+              <label>
+                Route / rotations
+                <select id="routePattern" name="routePattern" disabled>
+                  <option value="clean">Skoon routes</option>
+                  <option value="lateObjective">Laat by objectives</option>
+                  <option value="wrongSide">Verkeerde kant van map</option>
+                  <option value="randomRoams">Roams sonder wave setup</option>
+                </select>
+              </label>
+              <label>
+                Deaths
+                <select id="deathPattern" name="deathPattern" disabled>
+                  <option value="normal">Normaal</option>
+                  <option value="greed">Greed vir wave/plate/kill</option>
+                  <option value="noVision">Sonder vision</option>
+                  <option value="badFight">Slegte teamfight ingang</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid two">
+              <label>
+                Teamfights
+                <select id="teamfightPattern" name="teamfightPattern" disabled>
+                  <option value="useful">Nuttig in fights</option>
+                  <option value="tooEarly">Te vroeg ingegaan</option>
+                  <option value="tooLate">Te laat ingegaan</option>
+                  <option value="wrongTarget">Verkeerde target gefocus</option>
+                  <option value="splitTooMuch">Was nie by fights nie</option>
+                </select>
+              </label>
+              <label>
+                Lead gebruik
+                <select id="leadUse" name="leadUse" disabled>
+                  <option value="converted">Lead na objectives/towers</option>
+                  <option value="threw">Lead weggegooi</option>
+                  <option value="passive">Voor maar te passief</option>
+                  <option value="survivedBehind">Agter maar gestabiliseer</option>
+                  <option value="forcedBehind">Agter maar steeds geforce</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="grid three">
+              <label>
+                Wat wil jy oefen?
+                <select id="trainingFocus" name="trainingFocus" disabled>
+                  <option value="auto">Laat coach kies</option>
+                  <option value="laning">Laning</option>
+                  <option value="farm">Farming</option>
+                  <option value="jungleTracking">Jungle tracking</option>
+                  <option value="objectives">Objectives</option>
+                  <option value="teamfights">Teamfights</option>
+                  <option value="playingAhead">Voor speel</option>
+                  <option value="playingBehind">Agter speel</option>
+                  <option value="vision">Vision</option>
+                </select>
+              </label>
+              <label>
+                Skill vlak
+                <select id="skillLevel" name="skillLevel" disabled>
+                  <option value="bronze">Iron/Bronze/Silver</option>
+                  <option value="gold">Gold/Platinum</option>
+                  <option value="emerald">Emerald/Diamond</option>
+                  <option value="master">Master+</option>
+                </select>
+              </label>
+              <label>
+                Games vandag
+                <input id="gamesToday" name="gamesToday" type="number" min="1" value="3" readonly />
+              </label>
+            </div>
+
+            <div class="grid three">
+              <label>
+                Begin tyd
+                <input id="startTime" name="startTime" type="time" value="17:00" readonly />
+              </label>
+              <label>
+                Review tyd na game
+                <select id="reviewDepth" name="reviewDepth" disabled>
+                  <option value="quick">2 min quick review</option>
+                  <option value="normal">5 min normal review</option>
+                  <option value="deep">10 min deep review</option>
+                </select>
+              </label>
+              <label>
+                Queue mindset
+                <select id="mindset" name="mindset" disabled>
+                  <option value="calm">Calm climb</option>
+                  <option value="limit">Limit test</option>
+                  <option value="safe">Safe consistent</option>
+                </select>
+              </label>
+            </div>
+
+            <fieldset class="toggle-group">
+              <legend>Auto pattern flags</legend>
+              <label><input type="checkbox" name="tags" value="earlyDeath" disabled /> Vroee dood</label>
+              <label><input type="checkbox" name="tags" value="badRecall" disabled /> Swak recall timing</label>
+              <label><input type="checkbox" name="tags" value="missedObjective" disabled /> Objective gemis</label>
+              <label><input type="checkbox" name="tags" value="overextended" disabled /> Te ver gepush</label>
+              <label><input type="checkbox" name="tags" value="goodRoam" disabled /> Goeie roam</label>
+              <label><input type="checkbox" name="tags" value="wonLane" disabled /> Lane gewen</label>
+              <label><input type="checkbox" name="tags" value="goodWaveCrash" disabled /> Goeie wave crash</label>
+              <label><input type="checkbox" name="tags" value="badObjectiveSetup" disabled /> Swak objective setup</label>
+              <label><input type="checkbox" name="tags" value="goodPeel" disabled /> Goeie peel</label>
+            </fieldset>
+
+            <label>
+              Coach notes (auto)
+              <textarea id="notes" name="notes" rows="5" placeholder="Die app skryf notas wanneer dit genoeg data het..." readonly></textarea>
+            </label>
+          </form>
+        </section>
+      </section>
+
+      <aside class="review-panel" aria-live="polite">
+        <section class="score-card">
+          <div>
+            <p class="eyebrow">Overall</p>
+            <strong id="grade">B</strong>
+          </div>
+          <div class="score-ring" id="scoreRing">
+            <span id="score">74</span>
+          </div>
+        </section>
+
+        <section class="metrics" id="metrics"></section>
+
+        <section class="review-tabs" aria-label="Review sections">
+          <button class="tab-button active" type="button" data-tab="mistakes" data-i18n="tabMistakes">Mistakes</button>
+          <button class="tab-button" type="button" data-tab="improvements" data-i18n="tabImprove">Improve</button>
+          <button class="tab-button" type="button" data-tab="positives" data-i18n="tabStrengths">Strengths</button>
+          <button class="tab-button" type="button" data-tab="focus" data-i18n="tabFocus">Focus</button>
+          <button class="tab-button" type="button" data-tab="training" data-i18n="tabTraining">Training</button>
+          <button class="tab-button" type="button" data-tab="pro" data-i18n="tabProHabits">Pro Habits</button>
+          <button class="tab-button" type="button" data-tab="history" data-i18n="tabHistory">History</button>
+          <button class="tab-button" type="button" data-tab="changelog" data-i18n="tabLeagueUpdates">League Updates</button>
+        </section>
+
+        <section class="feedback-section tab-panel active" data-panel="mistakes">
+          <div class="section-title">
+            <h2 data-i18n="mistakesHeading">Waar jy verkeerd gegaan het</h2>
+          </div>
+          <div id="mistakes" class="feedback-list"></div>
+        </section>
+
+        <section class="feedback-section tab-panel" data-panel="improvements">
+          <div class="section-title">
+            <h2 data-i18n="improveHeading">Waar om te verbeter</h2>
+          </div>
+          <div id="improvements" class="feedback-list"></div>
+        </section>
+
+        <section class="feedback-section tab-panel" data-panel="positives">
+          <div class="section-title">
+            <h2 data-i18n="positivesHeading">Wat jy reg gedoen het</h2>
+          </div>
+          <div id="positives" class="feedback-list"></div>
+        </section>
+
+        <section class="focus-box tab-panel" data-panel="focus">
+          <h2 data-i18n="nextFocus">Volgende game fokus</h2>
+          <ol id="focusList"></ol>
+        </section>
+
+        <section class="feedback-section tab-panel" data-panel="training">
+          <div class="section-title">
+            <h2 data-i18n="trainingPlan">Training plan</h2>
+          </div>
+          <div id="trainingPlan" class="training-list"></div>
+        </section>
+
+        <section class="feedback-section tab-panel" data-panel="pro">
+          <div class="section-title">
+            <h2 data-i18n="proHabitsHeading">Pro habits</h2>
+          </div>
+          <div id="proHabits" class="training-list"></div>
+        </section>
+
+        <section class="feedback-section tab-panel" data-panel="history">
+          <div class="section-title">
+            <h2 data-i18n="reviewHistory">Review history</h2>
+            <button id="clearHistoryBtn" class="mini-button" type="button">Clear</button>
+          </div>
+          <div id="reviewHistory" class="history-list"></div>
+        </section>
+
+        <section class="feedback-section tab-panel" data-panel="changelog">
+          <div class="section-title">
+            <h2 data-i18n="leagueUpdatesHeading">League updates</h2>
+            <button id="refreshLeaguePatchBtn" class="mini-button" type="button" data-i18n="refreshPatch">Refresh</button>
+          </div>
+          <div id="changelogList" class="history-list"></div>
+        </section>
+      </aside>
+    </main>
+
+    <!-- Firebase SDK (v8 compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <!-- App -->
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+    <script src="auth.js"></script>
+  </body>
+</html>

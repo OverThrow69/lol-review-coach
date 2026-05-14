@@ -1,0 +1,60 @@
+{
+  "name": "lol-review-coach",
+  "version": "1.0.0",
+  "description": "Desktop League of Legends improvement coach with live monitoring and post-game review.",
+  "author": "Morries",
+  "main": "main.js",
+  "scripts": {
+    "start": "SET ELECTRON_RUN_AS_NODE= && electron .",
+    "check": "node --check app.js && node --check main.js && node --check preload.js && node --check auth.js && node --check firebase-config.js",
+    "dist": "electron-builder --win nsis portable",
+    "release": "electron-builder --win nsis portable --publish always"
+  },
+  "build": {
+    "appId": "com.morries.lolreviewcoach",
+    "productName": "LoL Review Coach",
+    "files": [
+      "index.html",
+      "styles.css",
+      "app.js",
+      "main.js",
+      "preload.js",
+      "firebase-config.js",
+      "auth.js",
+      "README.md",
+      "CHANGELOG.md",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "artifactName": "LoL-Review-Coach-Setup-${version}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "LoL Review Coach"
+    },
+    "portable": {
+      "artifactName": "LoL-Review-Coach-Portable-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "OverThrow69",
+        "repo": "lol-review-coach"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
+  }
+}
