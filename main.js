@@ -5,7 +5,36 @@ const path = require("path");
 const packageJson = require("./package.json");
 
 let mainWindow = null;
+let overlayWindow = null;
 let autoUpdater = null;
+
+function createOverlayWindow() {
+  if (overlayWindow && !overlayWindow.isDestroyed()) return;
+  overlayWindow = new BrowserWindow({
+    width: 376,
+    height: 170,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: false,
+    focusable: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, "overlay-preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  overlayWindow.loadFile("overlay.html");
+  overlayWindow.once("ready-to-show", () => {});
+}
+
+function sendOverlayData(data) {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.webContents.send("overlay:data", data);
+  }
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -503,7 +532,19 @@ app.whenReady().then(() => {
   ipcMain.handle("update:restart", () => {
     autoUpdater.quitAndInstall(false, true);
   });
+  ipcMain.handle("overlay:show", (_event, x, y) => {
+    if (!overlayWindow || overlayWindow.isDestroyed()) createOverlayWindow();
+    if (x !== undefined && y !== undefined) overlayWindow.setPosition(x, y);
+    overlayWindow.show();
+  });
+  ipcMain.handle("overlay:hide", () => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) overlayWindow.hide();
+  });
+  ipcMain.handle("overlay:push", (_event, data) => {
+    sendOverlayData(data);
+  });
   createWindow();
+  createOverlayWindow();
   if (app.isPackaged && updatesConfigured) {
     setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 4500);
   }

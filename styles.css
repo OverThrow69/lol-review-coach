@@ -278,14 +278,17 @@ h2 {
 }
 
 .coach-board {
-  border-radius: 8px;
-  padding: 18px;
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  border-color: rgba(201, 153, 58, 0.15);
+  background: linear-gradient(160deg, rgba(201, 153, 58, 0.04) 0%, rgba(20, 27, 32, 0.95) 60%) !important;
 }
 
 .live-monitor {
-  border-radius: 8px;
-  padding: 18px;
-  border-color: rgba(87, 199, 201, 0.18);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  border-color: rgba(87, 199, 201, 0.22);
+  background: linear-gradient(160deg, rgba(77, 184, 186, 0.04) 0%, rgba(20, 27, 32, 0.95) 60%) !important;
 }
 
 .coach-grid,
@@ -304,16 +307,24 @@ h2 {
 .live-grid article {
   min-height: 80px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.035);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.live-grid article:hover {
+  background: rgba(77, 184, 186, 0.06);
+  border-color: rgba(77, 184, 186, 0.3);
 }
 
 .coach-grid strong,
 .live-grid strong {
   display: block;
-  margin-bottom: 8px;
-  font-size: 1.05rem;
+  margin-bottom: 6px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--cyan);
 }
 
 .coach-grid span,
@@ -363,19 +374,56 @@ h2 {
   line-height: 1.42;
 }
 
-.session-plan {
-  margin: 0;
-  padding-left: 22px;
+.role-playbook {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.session-plan li {
-  margin: 8px 0;
-  line-height: 1.38;
+.play-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  background: rgba(255, 255, 255, 0.025);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.play-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(201, 153, 58, 0.35);
+}
+
+.play-situation {
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.play-card strong {
+  display: block;
+  font-size: 0.88rem;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.play-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 .panel {
-  border-radius: 8px;
-  padding: 18px;
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+
+.review-panel > section {
+  border-radius: var(--radius) !important;
+  padding: 18px 20px !important;
 }
 
 .input-panel {
@@ -497,24 +545,25 @@ select:disabled {
 }
 
 .review-tabs {
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .tab-button {
-  min-height: 36px;
+  min-height: 34px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   cursor: pointer;
   transition: all var(--transition);
   letter-spacing: 0.01em;
+  padding: 0 6px;
 }
 
 .tab-button:hover {
@@ -525,8 +574,9 @@ select:disabled {
 .tab-button.active {
   border-color: var(--gold);
   color: var(--gold-light);
-  background: rgba(201, 153, 58, 0.12);
+  background: rgba(201, 153, 58, 0.14);
   font-weight: 900;
+  box-shadow: 0 0 10px rgba(201, 153, 58, 0.12);
 }
 
 .tab-panel {
@@ -541,6 +591,9 @@ select:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: linear-gradient(135deg, rgba(201, 153, 58, 0.07) 0%, rgba(20, 27, 32, 0.95) 70%) !important;
+  border-color: rgba(201, 153, 58, 0.22) !important;
+  border-radius: var(--radius) !important;
 }
 
 #grade {
@@ -695,6 +748,72 @@ select:disabled {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
+  font-size: 0.84rem;
+}
+
+/* ── Pro Habits accordion ───────────────────────────────────────────────── */
+
+.habit-accordion {
+  border: 1px solid rgba(201, 153, 58, 0.2);
+  border-radius: var(--radius);
+  background: rgba(201, 153, 58, 0.04);
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.habit-accordion:hover,
+.habit-accordion[data-open="true"] {
+  border-color: rgba(201, 153, 58, 0.45);
+}
+
+.habit-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+  transition: background var(--transition);
+}
+
+.habit-header:hover {
+  background: rgba(201, 153, 58, 0.07);
+}
+
+.habit-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--gold-light);
+  flex: 1;
+  line-height: 1.35;
+}
+
+.habit-chevron {
+  font-size: 1.1rem;
+  color: var(--gold);
+  opacity: 0.7;
+  transition: transform 0.22s ease;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.habit-accordion[data-open="true"] .habit-chevron {
+  transform: rotate(90deg);
+}
+
+.habit-body {
+  padding: 0 14px 12px;
+}
+
+.habit-body p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
   font-size: 0.84rem;
 }
 

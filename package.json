@@ -1,6 +1,6 @@
 {
   "name": "lol-review-coach",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Desktop League of Legends improvement coach with live monitoring and post-game review.",
   "author": "Morries",
   "main": "main.js",
@@ -21,6 +21,8 @@
       "preload.js",
       "firebase-config.js",
       "auth.js",
+      "overlay.html",
+      "overlay-preload.js",
       "README.md",
       "CHANGELOG.md",
       "package.json"

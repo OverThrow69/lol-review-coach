@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: transparent;
+      font-family: Inter, system-ui, sans-serif;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+    }
+
+    /* ── Tip bar (above the minimap) ─────────────────────────── */
+    .tip-bar {
+      background: rgba(10, 13, 18, 0.92);
+      border: 1px solid rgba(201, 153, 58, 0.45);
+      border-radius: 8px 8px 0 0;
+      padding: 5px 28px 5px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      -webkit-app-region: drag;
+      position: relative;
+    }
+
+    .tip-top {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .live-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #6bb668;
+      animation: blink 1.6s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+    .situation-label {
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      flex: 1;
+      color: #e0b354;
+      transition: color 0.3s;
+    }
+    .situation-label.bad  { color: #e06060; }
+    .situation-label.good { color: #6bb668; }
+    .situation-label.warn { color: #e0b354; }
+
+    .obj-timer {
+      color: #4db8ba;
+      font-size: 0.7rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .tip-short {
+      color: #f0ece4;
+      font-size: 0.74rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .tip-short strong { color: #e0b354; font-weight: 900; }
+
+    .close-btn {
+      position: absolute;
+      top: 5px; right: 7px;
+      background: none; border: none;
+      color: rgba(255,255,255,0.3);
+      cursor: pointer; font-size: 10px;
+      line-height: 1;
+      -webkit-app-region: no-drag;
+    }
+    .close-btn:hover { color: rgba(255,255,255,0.8); }
+
+    /* ── Minimap overlay ─────────────────────────────────────── */
+    /* Sits directly over the League minimap — transparent so
+       the real minimap shows through, only zones glow on top */
+    .map-overlay {
+      width: 210px;
+      height: 210px;
+      position: relative;
+      background: transparent;
+      border-radius: 0 0 4px 4px;
+      overflow: hidden;
+    }
+
+    /* Zone glow — each zone matches its position on the LoL minimap:
+       Dragon  = bottom-right
+       Baron   = top-left
+       Herald  = top-left (before baron spawns)
+       Base    = bottom-left (recall indicator)
+    */
+    .zone {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+    }
+    .zone.active {
+      opacity: 1;
+      animation: zone-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes zone-pulse {
+      0%,100% { transform: scale(1);    opacity: 0.75; }
+      50%      { transform: scale(1.2); opacity: 1; }
+    }
+
+    .zone-dragon {
+      bottom: 18px; right: 18px;
+      width: 56px; height: 56px;
+      background: radial-gradient(circle,
+        rgba(255,110,30,0.85) 0%,
+        rgba(255,80,0,0.45) 45%,
+        transparent 70%);
+    }
+    .zone-baron {
+      top: 18px; left: 18px;
+      width: 56px; height: 56px;
+      background: radial-gradient(circle,
+        rgba(190,70,230,0.85) 0%,
+        rgba(150,50,210,0.45) 45%,
+        transparent 70%);
+    }
+    .zone-herald {
+      top: 22px; left: 22px;
+      width: 46px; height: 46px;
+      background: radial-gradient(circle,
+        rgba(70,210,130,0.85) 0%,
+        rgba(50,180,100,0.45) 45%,
+        transparent 70%);
+    }
+    .zone-base {
+      bottom: 12px; left: 12px;
+      width: 40px; height: 40px;
+      background: radial-gradient(circle,
+        rgba(90,140,255,0.85) 0%,
+        rgba(70,110,230,0.45) 45%,
+        transparent 70%);
+    }
+
+    /* Direction arrow from center to objective */
+    .arrow-wrap {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 0; height: 0;
+    }
+    .arrow-line {
+      position: absolute;
+      top: -1px;
+      width: 55px; height: 2px;
+      background: linear-gradient(to right,
+        rgba(255,255,255,0.9),
+        rgba(255,255,255,0.1));
+      transform-origin: 0 50%;
+      transition: transform 0.5s ease;
+    }
+    .arrow-head {
+      position: absolute;
+      top: -4px;
+      left: 52px;
+      width: 0; height: 0;
+      border-left: 9px solid rgba(255,255,255,0.85);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+
+    /* Objective label bottom of map */
+    .map-label {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,13,18,0.78);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: #e0b354;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .map-label.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Tip bar shown above the minimap -->
+  <div class="tip-bar">
+    <div class="tip-top">
+      <div class="live-dot" id="liveDot"></div>
+      <div class="situation-label warn" id="situationLabel">Live</div>
+      <div class="obj-timer" id="objTimer"></div>
+    </div>
+    <div class="tip-short" id="tipShort">Waiting for game…</div>
+    <button class="close-btn" id="closeBtn">✕</button>
+  </div>
+
+  <!-- Transparent overlay — drag it over your League minimap -->
+  <div class="map-overlay">
+    <div class="zone zone-dragon"  id="zoneDragon"></div>
+    <div class="zone zone-baron"   id="zoneBaron"></div>
+    <div class="zone zone-herald"  id="zoneHerald"></div>
+    <div class="zone zone-base"    id="zoneBase"></div>
+
+    <div class="arrow-wrap">
+      <div class="arrow-line" id="arrowLine"></div>
+      <div class="arrow-head" id="arrowHead"></div>
+    </div>
+
+    <div class="map-label" id="mapLabel"></div>
+  </div>
+
+  <script>
+    const ANGLES = {
+      dragon: 135, baron: 315, herald: 315,
+      base: 225, mid: 45, top: 330, bot: 150,
+    };
+
+    const LABELS = {
+      dragon: "DRAGON", baron: "BARON",
+      herald: "HERALD", base: "RECALL",
+      mid: "MID", top: "TOP", bot: "BOT",
+    };
+
+    document.getElementById("closeBtn").addEventListener("click", () => {
+      window.overlayBridge.hide();
+    });
+
+    const BAD_KEYWORDS  = ["died", "gesterf", "deaths", "missing gold", "goud gemis", "no vision", "geen vision", "too many", "te veel", "stop forcing", "stop om"];
+    const GOOD_KEYWORDS = ["kill!", "multi-kill", "winning", "wen!", "great", "uitstekend", "well done", "goed gedaan"];
+
+    window.overlayBridge.onUpdate((data) => {
+      if (!data) return;
+      document.getElementById("tipShort").innerHTML   = data.tip || "Watching…";
+      document.getElementById("objTimer").textContent = data.objectiveTimer || "";
+
+      const sit = (data.situation || "").toLowerCase();
+      const lbl = document.getElementById("situationLabel");
+      lbl.textContent = data.situation || "Live";
+      lbl.className = "situation-label";
+      if (BAD_KEYWORDS.some(k => sit.includes(k)))       lbl.classList.add("bad");
+      else if (GOOD_KEYWORDS.some(k => sit.includes(k))) lbl.classList.add("good");
+      else                                                lbl.classList.add("warn");
+
+      const goTo = data.goTo || "";
+
+      // Zone highlights
+      ["dragon","baron","herald","base"].forEach((z) => {
+        document.getElementById("zone" + z.charAt(0).toUpperCase() + z.slice(1))
+          ?.classList.toggle("active", goTo === z);
+      });
+
+      // Arrow
+      const angle = ANGLES[goTo] ?? 45;
+      document.getElementById("arrowLine").style.transform = `rotate(${angle}deg)`;
+      document.getElementById("arrowHead").style.transform =
+        `translateX(${Math.cos(angle * Math.PI / 180) * 53}px)
+         translateY(${Math.sin(angle * Math.PI / 180) * 53 - 5}px)
+         rotate(${angle}deg)`;
+
+      // Map label
+      const label = LABELS[goTo] || "";
+      const mapLabel = document.getElementById("mapLabel");
+      mapLabel.textContent = label;
+      mapLabel.classList.toggle("visible", !!label);
+    });
+  </script>
+</body>
+</html>

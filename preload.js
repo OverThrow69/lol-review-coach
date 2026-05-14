@@ -15,3 +15,9 @@ contextBridge.exposeInMainWorld("appUpdates", {
 contextBridge.exposeInMainWorld("externalLinks", {
   open: (url) => ipcRenderer.invoke("open:url", url),
 });
+
+contextBridge.exposeInMainWorld("liveOverlay", {
+  show: (x, y) => ipcRenderer.invoke("overlay:show", x, y),
+  hide: () => ipcRenderer.invoke("overlay:hide"),
+  push: (data) => ipcRenderer.invoke("overlay:push", data),
+});
