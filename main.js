@@ -27,7 +27,10 @@ function createOverlayWindow() {
     },
   });
   overlayWindow.loadFile("overlay.html");
-  overlayWindow.once("ready-to-show", () => {});
+  overlayWindow.once("ready-to-show", () => {
+    overlayWindow.setAlwaysOnTop(true, "screen-saver");
+    overlayWindow.setVisibleOnAllWorkspaces(true);
+  });
 }
 
 function sendOverlayData(data) {
@@ -549,6 +552,7 @@ app.whenReady().then(() => {
   ipcMain.handle("overlay:show", (_event, x, y) => {
     if (!overlayWindow || overlayWindow.isDestroyed()) createOverlayWindow();
     if (x !== undefined && y !== undefined) overlayWindow.setPosition(x, y);
+    overlayWindow.setAlwaysOnTop(true, "screen-saver");
     overlayWindow.show();
   });
   ipcMain.handle("overlay:hide", () => {
